@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Festa;
+use Illuminate\Support\Facades\Storage;
+
+class FestaController extends Controller
+{
+    public function showPdfs(Festa $festa)
+    {
+        // Pega todos os arquivos PDF gerados para esta festa na pasta 'pdfs'
+        // Assumindo que o nome do arquivo contém o ID da festa
+        $allPdfs = Storage::disk('public')->files('pdfs');
+
+        $festaPdfs = collect($allPdfs)->filter(function ($path) use ($festa) {
+            return str_contains($path, "festa-{$festa->id}.pdf");
+        })->map(function ($path) {
+            return Storage::url($path); // Converte o caminho para uma URL pública
+        })->values()->all(); // Remove as chaves para ter um array limpo
+
+        if (empty($festaPdfs)) {
+            return redirect()->back()->with('error', 'Nenhum PDF encontrado para esta festa.');
+        }
+
+        return view('festas.pdfs', compact('festa', 'festaPdfs'));
+    }
+
+    // Se você quiser um método para download direto:
+    public function downloadPdf(Festa $festa, string $filename)
+    {
+        $filePath = "pdfs/{$filename}";
+
+        // Verifica se o arquivo existe e se ele pertence a esta festa (segurança)
+        if (Storage::disk('public')->exists($filePath) && str_contains($filename, "festa-{$festa->id}.pdf")) {
+            return Storage::disk('public')->download($filePath, $filename);
+        }
+
+        abort(404, 'Arquivo PDF não encontrado ou acesso negado.');
+    }
+}
