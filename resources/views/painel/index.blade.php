@@ -33,6 +33,7 @@
                             <i class="fas fa-magic"></i> Gerar Cartelas
                         </button>
                         <a href="{{ route('festas.showPdfs', $festa) }}" class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> Ver PDFs</a>
+                        <a href="{{ route('gerar.Pdfs') }}" class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> Gerar PDFs</a>
                         <a href="{{ route('sorteio.show', $festa) }}" class="btn btn-success btn-sm"><i class="fas fa-dice"></i> Ir para Sorteio</a>
                     </div>
                 </div>

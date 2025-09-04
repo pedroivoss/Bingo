@@ -26,6 +26,11 @@ class FestaController extends Controller
         return view('festas.pdfs', compact('festa', 'festaPdfs'));
     }
 
+    public function gerarPdfs()
+    {
+        return view('festas.gerar_pdfs');
+    }
+
     // Se você quiser um método para download direto:
     public function downloadPdf(Festa $festa, string $filename)
     {

@@ -11,23 +11,19 @@
         <span>G</span>
         <span>O</span>
     </div>
-    <div class="tabela-numeros">
+    <table class="tabela-numeros">
         @foreach($data['numeros'] as $coluna)
-            <div class="coluna">
+            <tr class="coluna">
                 @foreach($coluna as $numero)
-                    <div class="celula">
+                    <td class="celula">
                         @if($numero === null)
                             <div class="coringa"></div>
                         @else
                             {{ $numero }}
                         @endif
-                    </div>
+                    </td>
                 @endforeach
-            </div>
+            </tr>
         @endforeach
-    </div>
-    {{-- Acesso à festa e outras informações --}}
-    @if (!empty($data['festa']->rodape_html))
-        <div class="rodape-html">{!! $data['festa']->rodape_html !!}</div>
-    @endif
+    </table>
 </div>
