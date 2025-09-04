@@ -12,6 +12,7 @@ return new class extends Migration
         Schema::create('festas', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
+            $table->boolean('is_cartela_cheia')->default(false);
             $table->date('data');
             $table->string('marca_dagua_path')->nullable();
             $table->string('coringa_path')->nullable();

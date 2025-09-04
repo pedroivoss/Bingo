@@ -17,10 +17,7 @@ class GerarCartelasJob implements ShouldQueue
 
     public function __construct(
         public Festa $festa,
-        public int $quantidade,
-        public int $quantidadePorFolha,
-        public int $cartelasPorArquivo,
-        public ?string $texto_lateral
+        public int $quantidade
     ) {}
 
     public function handle(): void
@@ -45,12 +42,6 @@ class GerarCartelasJob implements ShouldQueue
             $proximoCodigo++;
         }
 
-        GerarPdfsJob::dispatch(
-            $this->festa,
-            $this->quantidadePorFolha,
-            $this->cartelasPorArquivo,
-            $this->texto_lateral
-        );
     }
 
     private function gerarNumerosCartela(): array

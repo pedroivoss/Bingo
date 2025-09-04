@@ -44,7 +44,7 @@
                     <input type="number" class="form-control" name="premios[0][ordem]" value="1">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Descrição</label>
+                    <label class="form-label">Descrição (Extra)</label>
                     <input type="text" class="form-control" name="premios[0][descricao]" placeholder="Detalhes do prêmio">
                 </div>
                 <div class="col-md-1 d-flex align-items-end">

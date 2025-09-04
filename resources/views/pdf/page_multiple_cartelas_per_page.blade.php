@@ -2,27 +2,27 @@
 @extends('layouts.pdf')
 
 @section('content')
-    <div class="page-content">
-        @if ($festa->cabecalho_path)
-            <img src="{{ public_path('storage/' . $festa->cabecalho_path) }}" class="cabecalho-img">
-        @endif
+    <div class="page-wrapper"> {{-- Novo wrapper para controlar a página --}}
+        <div class="header-container">
+            @if ($festa->cabecalho_path)
+                <img src="{{ public_path('storage/' . $festa->cabecalho_path) }}" alt="Cabeçalho da Festa">
+            @endif
+        </div>
 
-        @if ($quantidadePorFolha > 1)
-            <div class="premios-container">
-                @foreach($premios as $premio)
-                    <div class="premio">
-                        <div class="premio-titulo">{{ $premio->titulo }}</div>
-                        <div class="premio-descricao">{{ $premio->descricao }}</div>
-                    </div>
-                @endforeach
+        @if($festa->watermark_path)
+            <div class="watermark-absolute">
+                <img src="{{ public_path('storage/' . $festa->watermark_path) }}" alt="Marca D'água">
             </div>
         @endif
 
-        <div class="cartela-grid cartela-grid-{{ $quantidadePorFolha }}">
+        <div class="cartelas-grid-container cartela-cols-{{ $quantidadePorFolha }}">
             @foreach($cartelasData as $data)
-                @include('pdf.cartela_template', ['data' => $data])
+                @include('pdf.cartela_template', ['data' => $data, 'premios' => $premios])
             @endforeach
         </div>
+
+        {{-- Adicione um clearfix se estiver usando floats --}}
+        <div style="clear: both;"></div>
 
         @if($festa->rodape_html)
             <div class="rodape-html">{!! $festa->rodape_html !!}</div>

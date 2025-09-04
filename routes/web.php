@@ -18,6 +18,7 @@ Route::prefix('painel')->group(function () {
     Route::post('/festas', [PainelController::class, 'storeFesta'])->name('painel.store-festa');
     Route::post('/festas/gerar', [PainelController::class, 'generateCards'])->name('painel.festa.generate-cards');
     Route::get('/festas/gerar-pdfs', [FestaController::class, 'gerarPdfs'])->name('gerar.Pdfs');
+    Route::post('/festas/gerar-pdfs-lote', [FestaController::class, 'gerarPdfLote'])->name('painel.festa.generate-pdf');
 });
 
 Route::get('/festas/{festa}/pdfs', [FestaController::class, 'showPdfs'])->name('festas.showPdfs');

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GerarPdfsJob;
 use App\Models\Festa;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class FestaController extends Controller
@@ -42,5 +44,21 @@ class FestaController extends Controller
         }
 
         abort(404, 'Arquivo PDF não encontrado ou acesso negado.');
+    }
+
+    public function gerarPdfLote(Request $request)
+    {
+        $request->validate([
+            'festa_id' => 'required|exists:festas,id',
+            'cartelas_por_arquivo' => 'required|integer|min:1|max:1000',
+        ]);
+
+        $festa = Festa::findOrFail($request->festa_id);
+        $cartelasPorArquivo = (int)$request->cartelas_por_arquivo;
+
+        // Dispara o job para gerar os PDFs em lote
+        GerarPdfsJob::dispatch($festa, $cartelasPorArquivo);
+
+        return redirect()->back()->with('success', 'Geração de PDFs em lote iniciada. Você será notificado quando estiver concluída.');
     }
 }

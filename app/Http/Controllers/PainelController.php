@@ -131,10 +131,7 @@ class PainelController extends Controller
        $texto_lateral = $request->texto_lateral;*/
        $request->validate([
             'festa_id' => 'required|exists:festas,id',
-            'quantidade' => 'required|integer|min:1',
-            'quantidade_por_folha' => 'required|integer|in:1,2,3,4,5,6',
-            'cartelas_por_arquivo' => 'required|integer|min:1',
-            'texto_lateral' => 'nullable|string'
+            'quantidade' => 'required|integer|min:1'
         ]);
 
        $festa = Festa::find($request->festa_id);
@@ -145,10 +142,7 @@ class PainelController extends Controller
 
         GerarCartelasJob::dispatch(
             $festa,
-            $request->quantidade, // <<< CORRIGIDO
-            $request->quantidade_por_folha, // <<< CORRIGIDO
-            $request->cartelas_por_arquivo, // <<< CORRIGIDO
-            $request->texto_lateral // <<< CORRIGIDO
+            $request->quantidade
         );
 
 

@@ -15,52 +15,50 @@ class GerarPdfsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // Construtor agora só recebe os dois argumentos que você passa do controller
     public function __construct(
         public Festa $festa,
-        public int $quantidadePorFolha,
-        public int $cartelasPorArquivo,
-        public ?string $texto_lateral = null
+        public int $cartelasPorArquivo
     ) {}
 
     public function handle(): void
     {
+        // Define valores padrão para as variáveis que não estão no construtor
+        $quantidadePorFolha = 6;
+        $textoLateral = null;
+
         $festa = $this->festa;
-        $prêmios = $festa->premios()->orderBy('ordem')->get(); // Buscar os prêmios ordenados
+        $premios = $festa->premios()->orderBy('ordem')->get();
         $cartelas = $festa->cartelas()->get();
         $lote = 1;
 
-        $cartelas->chunk($this->cartelasPorArquivo)->each(function ($loteCartelas) use ($festa, $prêmios, &$lote) {
+        //$cartelas->chunk($this->cartelasPorArquivo)->each(function ($loteCartelas) use ($festa, $premios, &$lote, $quantidadePorFolha, $textoLateral) {
             $html = '';
 
-            // Agora, agrupa as cartelas pela quantidade que você escolheu por folha
-            $loteCartelas->chunk($this->quantidadePorFolha)->each(function ($paginaCartelas) use ($festa, $prêmios, &$html) {
-                $cartelasData = [];
-                foreach ($paginaCartelas as $cartela) {
-                    // Duplica o mesmo objeto cartela na coleção, conforme a quantidade por folha
-                    for ($i = 0; $i < $this->quantidadePorFolha; $i++) {
-                        $cartelasData[] = [
-                            'numeros' => $cartela->numeros,
-                            'codigo' => $cartela->codigo,
-                            'festa' => $festa,
-                        ];
-                    }
-                }
+        //    $loteCartelas->chunk($quantidadePorFolha)->each(function ($paginaCartelas, $index) use ($festa, $premios, &$html, $quantidadePorFolha, $textoLateral) {
 
-                $html .= view('pdf.page_multiple_cartelas_per_page', [
-                    'cartelasData' => collect($cartelasData),
-                    'festa' => $festa,
-                    'premios' => $prêmios,
-                    'texto_lateral' => $this->texto_lateral,
-                    'quantidadePorFolha' => $this->quantidadePorFolha
-                ])->render();
-            });
+                // Prepara os dados de cada cartela
+                /*$cartelasData = $paginaCartelas->map(function ($cartela) use ($festa) {
+                    return [
+                        'numeros' => $cartela->numeros,
+                        'codigo'  => $cartela->codigo,
+                        'festa'   => $festa,
+                    ];
+                });*/
 
-            // Gera e salva o PDF para o lote atual
+            $html .= view('pdf.template_teste')->render();
+
+                // Adiciona quebra de página (menos na última)
+            $html .= '<div style="page-break-after: always;"></div>';
+            //});
+
             $pdf = Pdf::loadHtml($html);
-            $filename = "lote-{$lote}-festa-{$festa->id}.pdf";
+            $dateTime = now()->format('Ymd_His');
+            $pdf->setPaper('a4', 'portrait');
+            $filename = "lote-{$lote}-festa-{$festa->id}-{$dateTime}.pdf";
             Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
 
             $lote++;
-        });
+        //});
     }
 }
