@@ -45,13 +45,12 @@
 
     <hr>
 
+   {{-- A seção do histórico de números sorteados na sua view --}}
     <div class="row mt-4">
         <div class="col-md-12 text-center">
-
-
             <h4 id="contador-sorteios"></h4>
             <div class="d-flex justify-content-center flex-wrap" id="numeros-agrupados-lista">
-                {{-- Lista gerada via JS --}}
+                {{-- A lista será gerada aqui pelo JavaScript --}}
             </div>
         </div>
     </div>
@@ -193,19 +192,16 @@
             for (const letra in agrupados) {
                 if (agrupados[letra].length > 0) {
                     const grupoDiv = document.createElement('div');
-                    grupoDiv.classList.add('p-2', 'me-3');
+                    grupoDiv.classList.add('bingo-group-column', 'p-3', 'mx-2'); // Nova classe para o grupo
                     grupoDiv.innerHTML = `
-                        <h6>${letra}</h6>
-                        <ul class="list-group">
-                            ${agrupados[letra].sort((a, b) => a - b).map(numero => `
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>${numero}</span>
-                                    <button class="btn btn-danger btn-sm p-1 ms-2 remove-individual" data-numero="${numero}">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </li>
+                        <h6 class="bingo-letter-header mb-2">${letra}</h6> <div class="list-group bingo-numbers-list"> ${agrupados[letra].sort((a, b) => a - b).map(numero => `
+                                <div class="list-group-item d-flex justify-content-between align-items-center bingo-number-item p-2 my-1">
+                                    <span class="bingo-number-text">${numero}</span>
+                                    <button class="btn btn-sm p-0 ms-2 remove-individual bingo-remove-btn" data-numero="${numero}">
+                                        <i class="fas fa-times-circle"></i> </button>
+                                </div>
                             `).join('')}
-                        </ul>
+                        </div>
                     `;
                     listaSorteados.appendChild(grupoDiv);
                 }
@@ -493,17 +489,125 @@
     });
 </script>
 <style>
-    /* Estilo para a célula da cartela com número não sorteado */
+    /* Estilos Gerais para o Layout do Histórico */
+    #numeros-agrupados-lista {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+
+    /* Estilo para cada coluna de grupo de letras (B, I, N, G, O) */
+    .bingo-group-column {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        min-width: 70px;
+        flex-grow: 1;
+        max-width: 100px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Estilo para a letra (B, I, N, G, O) */
+    .bingo-letter-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+        text-align: center;
+        width: 100%;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 3px;
+    }
+
+    /* Estilo para a lista de números dentro de cada grupo */
+    .bingo-numbers-list {
+        width: 100%;
+    }
+
+    /* Estilo para cada item de número sorteado */
+    .bingo-number-item {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease-in-out;
+        font-size: 1.2rem; /* TAMANHO DO NÚMERO BEM REDUZIDO */
+        font-weight: 600;
+        color: #343a40;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 6px;
+    }
+
+    .bingo-number-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Estilo do botão de remover individual */
+    .bingo-remove-btn {
+        color: #dc3545;
+        background: none;
+        border: none;
+        font-size: 1.2rem; /* TAMANHO DO ÍCONE BEM REDUZIDO */
+        padding: 0;
+        line-height: 1;
+        opacity: 0.7;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+
+    .bingo-remove-btn:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        color: #c82333;
+    }
+
+    /* Ocultar texto do botão, se houver */
+    .bingo-remove-btn span {
+        display: none;
+    }
+
+    /* Estilos para a validação da cartela */
     #modal-bingo-card .not-marked {
-        background-color: #dc3545; /* Vermelho */
+        background-color: #dc3545;
         color: white;
         font-weight: bold;
     }
-    /* Mantém o estilo para a célula da cartela com número sorteado */
     #modal-bingo-card .marked {
-        background-color: #28a745; /* Verde */
+        background-color: #28a745;
         color: white;
         font-weight: bold;
+    }
+
+    /* Media Queries para Telas Menores */
+    @media (max-width: 768px) {
+        .bingo-group-column {
+            min-width: 60px;
+            max-width: 100%;
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .bingo-letter-header {
+            font-size: 1.2rem;
+        }
+        .bingo-number-item {
+            font-size: 1rem;
+            padding: 3px 5px;
+        }
+        .bingo-remove-btn {
+            font-size: 1rem;
+        }
+        #bola-gigante {
+            font-size: 3rem !important;
+        }
     }
 </style>
 @endpush
