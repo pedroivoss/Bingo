@@ -21,11 +21,14 @@ class FestaController extends Controller
         // Assumindo que o nome do arquivo contém o ID da festa
         $allPdfs = Storage::disk('public')->files('pdfs');
 
-        $festaPdfs = collect($allPdfs)->filter(function ($path) use ($festa) {
-            return str_contains($path, "festa-{$festa->id}.pdf");
-        })->map(function ($path) {
-            return Storage::url($path); // Converte o caminho para uma URL pública
-        })->values()->all(); // Remove as chaves para ter um array limpo
+        $listaDePDFCadastrados = Folha::where('festa_id', $festa->id)->get();
+
+        $festaPdfs = [];
+        foreach ($listaDePDFCadastrados as $folha) {
+            if (Storage::disk('public')->exists($folha->pdf_path)) {
+                $festaPdfs[] = Storage::url($folha->pdf_path);
+            }
+        }
 
         if (empty($festaPdfs)) {
             return redirect()->back()->with('error', 'Nenhum PDF encontrado para esta festa.');

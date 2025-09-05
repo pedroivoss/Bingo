@@ -22,6 +22,7 @@ Route::prefix('painel')->group(function () {
 });
 
 Route::get('/festas/{festa}/pdfs', [FestaController::class, 'showPdfs'])->name('festas.showPdfs');
+Route::get('/festas/{festa}/pdfs/{filename}/download', [FestaController::class, 'downloadPdf'])->name('festas.downloadPdf');
 
 // Rotas da Tela de Sorteio
 Route::prefix('sorteio/{festa}')->group(function () {
