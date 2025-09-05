@@ -27,7 +27,9 @@ class GerarCartelasJob implements ShouldQueue
 
         for ($i = 0; $i < $this->quantidade; $i++) {
             $numeros = $this->gerarNumerosCartela();
-            $numerosJson = json_encode($numeros);
+
+            // Gera JSON exatamente no formato esperado
+            $numerosJson = json_encode($numeros, JSON_UNESCAPED_UNICODE);
             $hashIntegridade = hash('sha256', $numerosJson);
 
             $codigo = str_pad($proximoCodigo, 4, '0', STR_PAD_LEFT);
@@ -35,13 +37,12 @@ class GerarCartelasJob implements ShouldQueue
             Cartela::create([
                 'festa_id' => $this->festa->id,
                 'codigo' => $codigo,
-                'numeros' => $numeros,
+                'numeros' => $numeros, // vai para o banco já como array
                 'hash_integridade' => $hashIntegridade,
             ]);
 
             $proximoCodigo++;
         }
-
     }
 
     private function gerarNumerosCartela(): array
@@ -55,20 +56,24 @@ class GerarCartelasJob implements ShouldQueue
         ];
 
         $cartela = [];
-        $cartela['B'] = $this->pegarNumerosAleatorios(collect($colunas['B']), 5);
-        $cartela['I'] = $this->pegarNumerosAleatorios(collect($colunas['I']), 5);
-        $cartela['N'] = $this->pegarNumerosAleatorios(collect($colunas['N']), 5);
-        $cartela['G'] = $this->pegarNumerosAleatorios(collect($colunas['G']), 5);
-        $cartela['O'] = $this->pegarNumerosAleatorios(collect($colunas['O']), 5);
 
-        $cartela['N'][2] = null;
+        foreach ($colunas as $letra => $numeros) {
+            $selecionados = $this->pegarNumerosAleatorios(collect($numeros), 5);
 
-        return array_values($cartela);
+            if ($letra === 'N') {
+                $selecionados[2] = null; // centro livre
+            }
+
+            // ⚡ força cada coluna a ser objeto numerado {0: x, 1: y, ...}
+            $cartela[] = collect($selecionados)->values()->all();
+        }
+
+        return $cartela;
     }
 
     private function pegarNumerosAleatorios(\Illuminate\Support\Collection $numeros, int $quantidade): array
     {
-        $selecionados = $numeros->shuffle()->take($quantidade)->sort()->all();
-        return $selecionados;
+        return $numeros->shuffle()->take($quantidade)->sort()->values()->all();
     }
 }
+
