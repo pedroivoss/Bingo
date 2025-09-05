@@ -125,6 +125,7 @@
     <tbody>
         @php
             $rows = $cartelasData->chunk(3);
+            $count = 0;
         @endphp
         @foreach($rows as $cartelaRow)
             <tr>
@@ -132,8 +133,11 @@
                     <td>
                         <div class="bingo-card">
                             <div class="prize-info">
-                                {{ $data['premios'][0]['nome'] ?? 'Prêmio' }}<br>
-                                {{ $data['premios'][0]['premio'] ?? 'N/A' }}
+                                {{ $data['premios'][$count]['titulo'] ?? 'Prêmio' }}<br>
+                                {{ $data['premios'][$count]['premio'] ?? 'N/A' }}
+                                @php
+                                    $count++;
+                                @endphp
                             </div>
                             <table class="bingo-table">
                                 <thead>
