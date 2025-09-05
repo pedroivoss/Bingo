@@ -31,4 +31,5 @@ Route::prefix('sorteio/{festa}')->group(function () {
     Route::post('/remover-ultimo', [SorteioController::class, 'removerUltimoNumero'])->name('sorteio.remover-ultimo');
     Route::post('/validar-cartela', [SorteioController::class, 'validarCartela'])->name('sorteio.validar-cartela');
     Route::post('/confirmar-vencedor', [SorteioController::class, 'confirmarVencedor'])->name('sorteio.confirmar-vencedor');
+    Route::post('/limpar', [SorteioController::class, 'limparSorteio'])->name('sorteio.limpar');
 });

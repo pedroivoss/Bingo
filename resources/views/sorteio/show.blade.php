@@ -14,6 +14,9 @@
             <button class="btn btn-warning btn-sm mt-3" id="remove-last-sorted" style="display: {{ $sorteios->isEmpty() ? 'none' : 'block' }}">
                 <i class="fas fa-undo"></i> Remover Último
             </button>
+            <button class="btn btn-danger btn-sm mt-3" id="limpar-sorteio" style="display: {{ $sorteios->isEmpty() ? 'none' : 'block' }}">
+                <i class="fas fa-trash"></i> Limpar Sorteio
+            </button>
         </div>
 
         <div class="col-md-6 text-center">
@@ -56,9 +59,7 @@
         </div>
     </div>
 
-
-
-<div class="modal fade" id="validarCartelaModal" tabindex="-1" aria-labelledby="validarCartelaModalLabel" aria-hidden="true">
+    <div class="modal fade" id="validarCartelaModal" tabindex="-1" aria-labelledby="validarCartelaModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
@@ -113,9 +114,12 @@
     const inputCodigoCartela = document.getElementById('codigo-cartela');
     const btnRegistrarNumero = document.getElementById('btn-registrar-numero');
     const btnRemoverUltimo = document.getElementById('remove-last-sorted');
+    const btnLimparSorteio = document.getElementById('limpar-sorteio'); // Novo botão
     const btnValidarCartela = document.getElementById('btn-validar-cartela');
     const modalValidar = new bootstrap.Modal(document.getElementById('validarCartelaModal'));
     const formConfirmarVencedor = document.getElementById('form-confirmar-vencedor');
+
+    // URL base para as requisições API
 
     // Mapeia os números para as letras de bingo
     const getBingoLetter = (number) => {
@@ -130,19 +134,42 @@
     // Atualiza a lista e a bola gigante
     const updateUi = async () => {
         try {
-            const response = await fetch(`/sorteio/${festaId}`, { headers: { 'Accept': 'application/json' } });
+            const response = await fetch(`${base_URL}/sorteio/${festaId}`, { headers: { 'Accept': 'application/json' } });
             const data = await response.json();
 
+            // Limpa a lista
             listaSorteados.innerHTML = '';
-            data.sorteios.forEach(sorteio => {
+
+            // Mapeia e organiza os sorteios por letra e número
+            const sorteiosFormatados = data.sorteios.map(sorteio => ({
+                ...sorteio,
+                letra: getBingoLetter(sorteio.numero) // Garante que a letra está correta
+            }));
+
+            // Ordena os sorteios: primeiro por letra (B, I, N, G, O) e depois por número
+            const sorteiosOrdenados = sorteiosFormatados.sort((a, b) => {
+                const letrasOrdem = ['B', 'I', 'N', 'G', 'O'];
+                if (letrasOrdem.indexOf(a.letra) !== letrasOrdem.indexOf(b.letra)) {
+                    return letrasOrdem.indexOf(a.letra) - letrasOrdem.indexOf(b.letra);
+                }
+                return a.numero - b.numero;
+            });
+
+            // Popula a lista com os números ordenados
+            sorteiosOrdenados.forEach(sorteio => {
                 const li = document.createElement('li');
                 li.classList.add('list-group-item');
                 li.textContent = `${sorteio.letra}${sorteio.numero}`;
                 listaSorteados.appendChild(li);
             });
 
-            bolaGigante.textContent = data.sorteios.length > 0 ? `${data.sorteios[0].letra}${data.sorteios[0].numero}` : '?';
+            // Atualiza a bola gigante com o último número sorteado (o mais recente)
+            const ultimoSorteio = data.sorteios[0];
+            bolaGigante.textContent = ultimoSorteio ? `${getBingoLetter(ultimoSorteio.numero)}${ultimoSorteio.numero}` : '?';
+
+            // Alterna a exibição dos botões de remover e limpar
             btnRemoverUltimo.style.display = data.sorteios.length > 0 ? 'block' : 'none';
+            btnLimparSorteio.style.display = data.sorteios.length > 0 ? 'block' : 'none';
 
         } catch (error) {
             console.error('Erro ao atualizar a interface:', error);
@@ -155,7 +182,7 @@
         if (!numero) return alert('Por favor, digite um número.');
 
         try {
-            const response = await fetch(`/sorteio/${festaId}/registrar-numero`, {
+            const response = await fetch(`${base_URL}/sorteio/${festaId}/registrar-numero`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                 body: JSON.stringify({ numero: parseInt(numero) })
@@ -178,7 +205,7 @@
     btnRemoverUltimo.addEventListener('click', async () => {
         if (confirm('Tem certeza que deseja remover o último número sorteado?')) {
             try {
-                const response = await fetch(`/sorteio/${festaId}/remover-ultimo`, {
+                const response = await fetch(`${base_URL}/sorteio/${festaId}/remover-ultimo`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
                 });
@@ -195,13 +222,35 @@
         }
     });
 
+    // Limpa todos os números sorteados
+    btnLimparSorteio.addEventListener('click', async () => {
+        if (confirm('Tem certeza que deseja limpar todo o sorteio e começar uma nova rodada de prêmios?')) {
+            try {
+                const response = await fetch(`${base_URL}/sorteio/${festaId}/limpar`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Sorteio limpo com sucesso!');
+                    updateUi();
+                } else {
+                    alert(data.message || 'Erro ao limpar sorteio.');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro de comunicação.');
+            }
+        }
+    });
+
     // Valida a cartela
     btnValidarCartela.addEventListener('click', async () => {
         const codigo = inputCodigoCartela.value;
         if (!codigo) return alert('Por favor, digite o código da cartela.');
 
         try {
-            const response = await fetch(`/sorteio/${festaId}/validar-cartela`, {
+            const response = await fetch(`${base_URL}/sorteio/${festaId}/validar-cartela`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                 body: JSON.stringify({ codigo })
@@ -285,6 +334,5 @@
             alert('Erro de comunicação ao confirmar vencedor.');
         }
     });
-
 </script>
 @endpush

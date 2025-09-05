@@ -134,4 +134,11 @@ class SorteioController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Vencedor confirmado com sucesso!']);
     }
+
+    public function limparSorteio(Festa $festa)
+    {
+        Sorteio::where('festa_id', $festa->id)->delete();
+
+        return response()->json(['success' => true]);
+    }
 }
