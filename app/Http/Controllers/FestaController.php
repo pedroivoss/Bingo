@@ -79,7 +79,6 @@ class FestaController extends Controller
             $cartelasParaGerarNesteArquivo = collect();
 
             foreach ($grupoCartelasParaArquivo as $cartelaOriginal) {
-                //$numerosOriginais = $cartelaOriginal->numeros;
 
                 $numerosOriginais = array_values($cartelaOriginal->numeros);
 

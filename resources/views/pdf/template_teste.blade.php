@@ -169,9 +169,6 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                            <div class="barcode-section">
-                                <p>Cartela:{{ $data['codigo'] }}</p>
-                            </div>
                         </div>
                     </td>
                 @endforeach
@@ -184,6 +181,12 @@
         @endforeach
     </tbody>
 </table>
-
+<br><br>
+<div class="barcode-section">
+    <p>Cartela:{{ $data['codigo'] }}</p>
+</div>
+<div style="text-align: center; font-size: 12px; margin-top: 20px;">
+    Paróquia Exaltação da Santa Cruz - Ubatuba, SP 2025
+</div>
 </body>
 </html>
