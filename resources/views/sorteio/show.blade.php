@@ -64,6 +64,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
+                        <div class="col-md-3"></div>
                         <div class="col-md-6">
                             <h5>Cartela Sorteada</h5>
                             <table class="bingo-card w-100" id="modal-bingo-card">
@@ -74,23 +75,10 @@
                             </table>
                             <h5 class="mt-3" id="modal-status-ganhador"></h5>
                         </div>
-                        <div class="col-md-6">
-                            <h5>Prêmios Disponíveis</h5>
-                            <form id="form-confirmar-vencedor">
-                                @csrf
-                                <input type="hidden" name="cartela_id" id="modal-cartela-id">
-                                <div class="mb-3">
-                                    <label for="premio_id" class="form-label">Selecione o Prêmio</label>
-                                    <select class="form-select" name="premio_id" id="premio_id" required>
-                                        <option value="">Selecione um prêmio...</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-success" id="btn-confirmar-vencedor" disabled>Confirmar Vencedor</button>
-                            </form>
-                            <div class="alert alert-warning mt-3" id="integridade-warning" style="display: none;">
+                        <div class="col-md-3"></div>
+                        <div class="alert alert-warning mt-3" id="integridade-warning" style="display: none;">
                                 <i class="fas fa-exclamation-triangle"></i> **Alerta de Integridade:** O hash da cartela não confere!
                             </div>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -383,7 +371,6 @@
 
             if (response.ok) {
                 document.getElementById('modal-cartela-codigo').textContent = result.cartela.codigo;
-                document.getElementById('modal-cartela-id').value = result.cartela.id;
 
                 const bingoTable = document.getElementById('modal-bingo-card').querySelector('tbody');
                 bingoTable.innerHTML = '';
@@ -412,19 +399,8 @@
                 });
 
                 document.getElementById('modal-status-ganhador').textContent = result.is_winner ? `Status: GANHOU! Cartela Cheia!` : `Status: Faltam ${24 - result.acertos} números para cartela cheia.`;
-                document.getElementById('btn-confirmar-vencedor').disabled = !result.is_winner;
                 document.getElementById('integridade-warning').style.display = result.is_integrity_ok ? 'none' : 'block';
 
-                const premioSelect = document.getElementById('premio_id');
-                premioSelect.innerHTML = '<option value="">Selecione um prêmio...</option>';
-                if (result.premios_disponiveis) {
-                    result.premios_disponiveis.forEach(premio => {
-                        const option = document.createElement('option');
-                        option.value = premio.id;
-                        option.textContent = `${premio.ordem}º - ${premio.titulo}`;
-                        premioSelect.appendChild(option);
-                    });
-                }
                 modalValidar.show();
             } else {
                 Swal.fire({
