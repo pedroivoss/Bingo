@@ -28,6 +28,7 @@ Route::get('/festas/{festa}/pdfs/{filename}/download', [FestaController::class, 
 Route::prefix('sorteio/{festa}')->group(function () {
     Route::get('/', [SorteioController::class, 'show'])->name('sorteio.show');
     Route::post('/registrar-numero', [SorteioController::class, 'registrarNumero'])->name('sorteio.registrar-numero');
+    Route::post('/remover-numero', [SorteioController::class, 'removerNumero'])->name('sorteio.remover-numero');
     Route::post('/remover-ultimo', [SorteioController::class, 'removerUltimoNumero'])->name('sorteio.remover-ultimo');
     Route::post('/validar-cartela', [SorteioController::class, 'validarCartela'])->name('sorteio.validar-cartela');
     Route::post('/confirmar-vencedor', [SorteioController::class, 'confirmarVencedor'])->name('sorteio.confirmar-vencedor');

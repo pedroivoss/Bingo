@@ -6,14 +6,25 @@ use App\Models\Festa;
 use App\Models\Sorteio;
 use App\Models\Cartela;
 use App\Models\Vencedor;
+use App\Traits\mainTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SorteioController extends Controller
 {
+    use mainTrait;
+
     public function show(Festa $festa)
     {
         $sorteios = Sorteio::where('festa_id', $festa->id)->orderBy('ordem', 'desc')->get();
+
+        // **CORREÇÃO CRUCIAL:** Verifica se a requisição espera uma resposta JSON
+        // se a requisição for feita por um fetch() do JavaScript.
+        if (request()->wantsJson()) {
+            return response()->json(['sorteios' => $sorteios]);
+        }
+
+        // Se a requisição for uma navegação normal, retorna a view
         return view('sorteio.show', compact('festa', 'sorteios'));
     }
 
@@ -38,11 +49,7 @@ class SorteioController extends Controller
             'ordem' => Sorteio::where('festa_id', $festa->id)->count() + 1,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'sorteio' => $sorteio,
-            'message' => 'Número registrado com sucesso!'
-        ]);
+        return $this->success('Número registrado com sucesso!');
     }
 
     // Método para remover o último número registrado
@@ -133,6 +140,24 @@ class SorteioController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Vencedor confirmado com sucesso!']);
+    }
+
+    public function removerNumero(Request $request, Festa $festa)
+    {
+        // Valida se o campo 'numero' foi enviado
+        $request->validate(['numero' => 'required|integer|min:1|max:75']);
+
+        // Encontra o sorteio com o número e a festa correspondentes
+        $sorteio = Sorteio::where('festa_id', $festa->id)
+                          ->where('numero', $request->input('numero'))
+                          ->first();
+
+        if ($sorteio) {
+            $sorteio->delete();
+            return response()->json(['success' => true, 'message' => 'Número removido com sucesso.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Número não encontrado.'], 404);
     }
 
     public function limparSorteio(Festa $festa)
