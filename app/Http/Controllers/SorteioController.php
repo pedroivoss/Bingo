@@ -97,6 +97,48 @@ class SorteioController extends Controller
 
         // 5. Conta quantos números da cartela foram sorteados
         $acertos = 0;
+        $isCartelaCheia = (bool) $festa->is_cartela_cheia;
+
+        // Reorganiza os números da cartela em formato de colunas
+        $numerosPorColuna = [];
+
+        $colunaNum = $numerosCartela;
+        for ($i = 0; $i < 5; $i++) {
+
+            // Adiciona o espaço vazio na coluna "N" se não for cartela cheia
+            if ($isCartelaCheia && $i == 2) {
+                //tratar coringa
+                $colunaNum[$i][2] = 99; // Usando 99 como valor temporário para o espaço vazio
+                sort($colunaNum[$i]);
+                //reestrutura o array para garantir que o null fique na posição correta
+                $colunaNum[$i] = [
+                    $colunaNum[$i][0],
+                    $colunaNum[$i][1],
+                    null,
+                    $colunaNum[$i][2],
+                    $colunaNum[$i][3],
+                ];
+
+            }
+
+            // Se for cartela cheia, ordena os números de cada coluna
+            if ($isCartelaCheia && $i != 2) {
+                sort($colunaNum[$i]);
+            }
+
+            $numerosPorColuna[$i] = $colunaNum[$i];
+        }
+
+        // Transforma o array de colunas em array de linhas para facilitar a renderização no template
+        $numerosParaRenderizar = [];
+        for ($i = 0; $i < 5; $i++) {
+            $linha = [];
+            for ($j = 0; $j < 5; $j++) {
+                $linha[] = $numerosPorColuna[$j][$i];
+            }
+            $numerosParaRenderizar[] = $linha;
+        }
+
         foreach ($numerosCartela as $row) {
             foreach ($row as $number) {
                 if ($number !== null && in_array($number, $numerosSorteados)) {
@@ -104,6 +146,8 @@ class SorteioController extends Controller
                 }
             }
         }
+
+        $numerosCartela = $numerosParaRenderizar;
 
         // 6. Verifica se é um ganhador (24 acertos para cartela cheia)
         $isWinner = ($acertos >= 24);
