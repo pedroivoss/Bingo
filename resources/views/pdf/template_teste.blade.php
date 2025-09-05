@@ -145,7 +145,13 @@
                             </div>
                             <table class="bingo-table">
                                 <thead>
-                                    <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+                                    <tr>
+                                        <th>B</th>
+                                        <th>I</th>
+                                        <th>N</th>
+                                        <th>G</th>
+                                        <th>O</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($data['numeros'] as $linha)

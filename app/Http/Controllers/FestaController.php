@@ -64,64 +64,97 @@ class FestaController extends Controller
         ]);
 
         $festa = Festa::findOrFail($request->festa_id);
-        $cartelasPorArquivo = (int) $request->cartelas_por_arquivo; // Quantidade de cartelas por ARQUIVO PDF
+        $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
+        $isCartelaCheia = (bool) $festa->is_cartela_cheia;
 
-        // 1. Busca todos os prêmios e cartelas
         $premios = $festa->premios()->get();
-        $qtdPremios = $premios->count(); // Quantidade de prêmios
+        $qtdPremios = $premios->count();
 
-        $cartelasOriginais = $festa->cartelas()->get(); // As cartelas sem duplicação
-
-        $todosOsArquivosHTML = []; // Para armazenar o HTML de cada PDF
-
-        // 2. Divide as cartelas originais em grupos para cada arquivo PDF
-        // Ex: 20 cartelas, 5 por arquivo = 4 grupos (1-5, 6-10, 11-15, 16-20)
+        $cartelasOriginais = $festa->cartelas()->get();
         $gruposParaArquivos = $cartelasOriginais->chunk($cartelasPorArquivo);
 
-        $fileIndex = 1; // Para nomear os arquivos PDF (ex: lote-1.pdf, lote-2.pdf)
+        $fileIndex = 1;
 
-        // 3. Processa cada grupo de cartelas originais para criar um PDF separado
         foreach ($gruposParaArquivos as $grupoCartelasParaArquivo) {
             $cartelasParaGerarNesteArquivo = collect();
 
-            // Para cada cartela do grupo, duplica para cada prêmio
             foreach ($grupoCartelasParaArquivo as $cartelaOriginal) {
+                //$numerosOriginais = $cartelaOriginal->numeros;
+
+                $numerosOriginais = array_values($cartelaOriginal->numeros);
+
+                $numerosPorColuna = [];
+
+                // Agrupa os números por coluna (B, I, N, G, O)
+                $coluna = $numerosOriginais;
+                for ($i = 0; $i < 5; $i++) {
+
+                    // Adiciona o espaço vazio na coluna "N" se não for cartela cheia
+                    if ($isCartelaCheia && $i == 2) {
+                        //tratar coringa
+                        $coluna[$i][2] = 99; // Usando 99 como valor temporário para o espaço vazio
+                        sort($coluna[$i]);
+                        //reestrutura o array para garantir que o null fique na posição correta
+                        $coluna[$i] = [
+                            $coluna[$i][0],
+                            $coluna[$i][1],
+                            null,
+                            $coluna[$i][2],
+                            $coluna[$i][3],
+                        ];
+
+                    }
+
+                    // Se for cartela cheia, ordena os números de cada coluna
+                    if ($isCartelaCheia && $i != 2) {
+                        sort($coluna[$i]);
+                    }
+
+                    $numerosPorColuna[$i] = $coluna[$i];
+                }
+
+                // Transforma o array de colunas em array de linhas para facilitar a renderização no template
+                $numerosParaRenderizar = [];
+                for ($i = 0; $i < 5; $i++) {
+                    $linha = [];
+                    for ($j = 0; $j < 5; $j++) {
+                        $linha[] = $numerosPorColuna[$j][$i];
+                    }
+                    $numerosParaRenderizar[] = $linha;
+                }
+
                 foreach ($premios as $premio) {
                     $cartelasParaGerarNesteArquivo->push([
-                        'numeros' => $cartelaOriginal->numeros,
+                        'numeros' => $numerosParaRenderizar,
                         'codigo' => $cartelaOriginal->codigo,
                         'festa' => $festa,
-                        'premios' => $premios, // Todos os prêmios
-                        'premio_atual' => $premio, // Prêmio atual para destaque
+                        'premios' => $premios,
+                        'premio_atual' => $premio,
                     ]);
                 }
             }
 
-            // Divide o conteúdo deste arquivo em "páginas" (cada página com 'qtdPremios' cartelas)
-            // Isso é para garantir que a duplicação por prêmio esteja dentro do mesmo arquivo PDF
             $lotesPaginasDesteArquivo = $cartelasParaGerarNesteArquivo->chunk($qtdPremios);
-
             $htmlDesteArquivo = '';
+
             foreach ($lotesPaginasDesteArquivo as $lote) {
                 $htmlDesteArquivo .= view('pdf.template_teste', [
                     'cartelasData' => $lote,
                     'festa' => $festa,
                     'premios' => $premios,
                 ])->render();
-                // Adiciona quebra de página se não for o último lote deste arquivo
-                if (!$lote->last) {
+                if (!$lote->last()) {
                     $htmlDesteArquivo .= '<div style="page-break-after: always;"></div>';
                 }
             }
 
-            // Agora geramos o PDF para este arquivo específico
             $pdf = Pdf::loadHtml($htmlDesteArquivo);
             $pdf->setPaper('a4', 'portrait');
             $dateTime = now()->format('Ymd_His');
             $filename = "lote-{$fileIndex}-festa-{$festa->id}-{$dateTime}.pdf";
             Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
 
-            $fileIndex++; // Incrementa para o próximo nome de arquivo
+            $fileIndex++;
         }
 
         return response()->json([
