@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\GerarPdfsJob;
 use App\Models\Festa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+
 
 class FestaController extends Controller
 {
@@ -54,11 +61,40 @@ class FestaController extends Controller
         ]);
 
         $festa = Festa::findOrFail($request->festa_id);
-        $cartelasPorArquivo = (int)$request->cartelas_por_arquivo;
+        $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
 
-        // Dispara o job para gerar os PDFs em lote
-        GerarPdfsJob::dispatch($festa, $cartelasPorArquivo);
+        // **Ajuste:** Buscando as cartelas da festa para simular o Job.
+        $cartelas = $festa->cartelas()->get();
+        $loteCartelas = $cartelas->chunk($cartelasPorArquivo);
 
-        return redirect()->back()->with('success', 'Geração de PDFs em lote iniciada. Você será notificado quando estiver concluída.');
+        // **Ajuste:** Inicia a variável de HTML vazia.
+        $html = '';
+
+        // **Ajuste:** Loop para processar os lotes de cartelas.
+        foreach ($loteCartelas as $lote) {
+            $cartelasData = $lote->map(function ($cartela) use ($festa) {
+                return [
+                    'numeros' => $cartela->numeros,
+                    'codigo' => $cartela->codigo,
+                    'festa' => $festa,
+                    'premios' => $festa->premios()->get(),
+                ];
+            });
+
+            // **Ajuste:** Renderiza o template uma única vez com os dados corretos.
+            // A quebra de página (page-break) já está no CSS do template_teste.blade.php.
+            $html .= view('pdf.template_teste', compact('cartelasData', 'festa'))->render();
+        }
+
+        $pdf = Pdf::loadHtml($html);
+        $dateTime = now()->format('Ymd_His');
+        $pdf->setPaper('a4', 'portrait');
+        $filename = "lote-1-festa-{$festa->id}-{$dateTime}.pdf";
+        Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'O PDF foi gerado e salvo com sucesso. Verifique o storage.'
+        ]);
     }
 }
