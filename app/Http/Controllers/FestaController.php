@@ -64,50 +64,69 @@ public function gerarPdfLote(Request $request)
     ]);
 
     $festa = Festa::findOrFail($request->festa_id);
-    $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
+    $cartelasPorArquivo = (int) $request->cartelas_por_arquivo; // Quantidade de cartelas por ARQUIVO PDF
 
     // 1. Busca todos os prêmios e cartelas
     $premios = $festa->premios()->get();
-    $qtdPremios = $festa->premios()->count();
-    $cartelas = $festa->cartelas()->get();
+    $qtdPremios = $premios->count(); // Quantidade de prêmios
 
-    $cartelasParaGerar = collect();
+    $cartelasOriginais = $festa->cartelas()->get(); // As cartelas sem duplicação
 
-    // 2. Itera sobre cada cartela e duplica para cada prêmio
-    foreach ($cartelas as $cartela) {
-        foreach ($premios as $premio) {
-            $cartelasParaGerar->push([
-                'numeros' => $cartela->numeros,
-                'codigo' => $cartela->codigo,
-                'festa' => $festa,
-                'premios' => $premios, // Todos os prêmios
-                'premio_atual' => $premio, // Prêmio atual para destaque
-            ]);
+    $todosOsArquivosHTML = []; // Para armazenar o HTML de cada PDF
+
+    // 2. Divide as cartelas originais em grupos para cada arquivo PDF
+    // Ex: 20 cartelas, 5 por arquivo = 4 grupos (1-5, 6-10, 11-15, 16-20)
+    $gruposParaArquivos = $cartelasOriginais->chunk($cartelasPorArquivo);
+
+    $fileIndex = 1; // Para nomear os arquivos PDF (ex: lote-1.pdf, lote-2.pdf)
+
+    // 3. Processa cada grupo de cartelas originais para criar um PDF separado
+    foreach ($gruposParaArquivos as $grupoCartelasParaArquivo) {
+        $cartelasParaGerarNesteArquivo = collect();
+
+        // Para cada cartela do grupo, duplica para cada prêmio
+        foreach ($grupoCartelasParaArquivo as $cartelaOriginal) {
+            foreach ($premios as $premio) {
+                $cartelasParaGerarNesteArquivo->push([
+                    'numeros' => $cartelaOriginal->numeros,
+                    'codigo' => $cartelaOriginal->codigo,
+                    'festa' => $festa,
+                    'premios' => $premios, // Todos os prêmios
+                    'premio_atual' => $premio, // Prêmio atual para destaque
+                ]);
+            }
         }
+
+        // Divide o conteúdo deste arquivo em "páginas" (cada página com 'qtdPremios' cartelas)
+        // Isso é para garantir que a duplicação por prêmio esteja dentro do mesmo arquivo PDF
+        $lotesPaginasDesteArquivo = $cartelasParaGerarNesteArquivo->chunk($qtdPremios);
+
+        $htmlDesteArquivo = '';
+        foreach ($lotesPaginasDesteArquivo as $lote) {
+            $htmlDesteArquivo .= view('pdf.template_teste', [
+                'cartelasData' => $lote,
+                'festa' => $festa,
+                'premios' => $premios,
+            ])->render();
+            // Adiciona quebra de página se não for o último lote deste arquivo
+            if (!$lote->last) {
+                $htmlDesteArquivo .= '<div style="page-break-after: always;"></div>';
+            }
+        }
+
+        // Agora geramos o PDF para este arquivo específico
+        $pdf = Pdf::loadHtml($htmlDesteArquivo);
+        $pdf->setPaper('a4', 'portrait');
+        $dateTime = now()->format('Ymd_His');
+        $filename = "lote-{$fileIndex}-festa-{$festa->id}-{$dateTime}.pdf";
+        Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
+
+        $fileIndex++; // Incrementa para o próximo nome de arquivo
     }
-
-    // 3. Divide a coleção total em lotes (páginas)
-    $lotesPaginas = $cartelasParaGerar->chunk($qtdPremios);
-
-    // 4. Gera o HTML de cada lote e o anexa com quebras de página
-    $html = '';
-    foreach ($lotesPaginas as $lote) {
-        $html .= view('pdf.template_teste', [
-            'cartelasData' => $lote,
-            'festa' => $festa,
-            'premios' => $premios,
-        ])->render();
-    }
-
-    $pdf = Pdf::loadHtml($html);
-    $pdf->setPaper('a4', 'portrait');
-    $dateTime = now()->format('Ymd_His');
-    $filename = "lote-festa-{$festa->id}-{$dateTime}.pdf";
-    Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
 
     return response()->json([
         'success' => true,
-        'message' => 'O PDF foi gerado e salvo com sucesso. Verifique o storage.'
+        'message' => 'Os PDFs foram gerados e salvos com sucesso. Verifique o storage.'
     ]);
 }
 }
