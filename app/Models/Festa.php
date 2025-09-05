@@ -24,4 +24,9 @@ class Festa extends Model
     {
         return $this->hasMany(Cartela::class);
     }
+
+    public function folhas(): HasMany
+    {
+        return $this->hasMany(Folha::class);
+    }
 }

@@ -1,0 +1,1 @@
+https://uxsolutions.github.io/bootstrap-datepicker/?markup=input&format=mm%2Fdd%2Fyyy&weekStart=&startDate=&endDate=&startView=0&minViewMode=0&maxViewMode=4&todayBtn=linked&clearBtn=true&language=az&orientation=top%20right&multidate=&multidateSeparator=&keyboardNavigation=on&forceParse=on#sandbox

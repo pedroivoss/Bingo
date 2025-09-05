@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Festa;
+use App\Models\Folha;
+use App\Traits\mainTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,6 +13,8 @@ use Milon\Barcode\Facades\DNS1DFacade;
 
 class FestaController extends Controller
 {
+    use mainTrait;
+
     public function showPdfs(Festa $festa)
     {
         // Pega todos os arquivos PDF gerados para esta festa na pasta 'pdfs'
@@ -33,7 +37,7 @@ class FestaController extends Controller
     public function gerarPdfs()
     {
         return view('festas.gerar_pdfs');
-    }
+    }//fim funcao
 
     // Se você quiser um método para download direto:
     public function downloadPdf(Festa $festa, string $filename)
@@ -46,7 +50,7 @@ class FestaController extends Controller
         }
 
         abort(404, 'Arquivo PDF não encontrado ou acesso negado.');
-    }
+    }//fim funcao
 
     public function gerarPdfLote(Request $request)
     {
@@ -59,6 +63,11 @@ class FestaController extends Controller
         ]);
 
         $festa = Festa::findOrFail($request->festa_id);
+
+        $nomeFesta = str_replace(' ', '_', $festa->nome);
+
+        //return $this->success('Validação bem-sucedida. Iniciando geração de PDFs.', 200);
+
         $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
         $isCartelaCheia = (bool) $festa->is_cartela_cheia;
 
@@ -134,6 +143,7 @@ class FestaController extends Controller
             $htmlDesteArquivo = '';
 
             foreach ($lotesPaginasDesteArquivo as $lote) {
+
                 $htmlDesteArquivo .= view('pdf.page_multiple_cartelas_per_page', [
                     'cartelasData' => $lote,
                     'festa' => $festa,
@@ -147,8 +157,23 @@ class FestaController extends Controller
             $pdf = Pdf::loadHtml($htmlDesteArquivo);
             $pdf->setPaper('a4', 'portrait');
             $dateTime = now()->format('Ymd_His');
-            $filename = "lote-{$fileIndex}-festa-{$festa->id}-{$dateTime}.pdf";
+            $nomeFesta = str_replace(' ', '_', $festa->nome);
+
+            $contadorCartelasIni = str_pad((($fileIndex - 1) * $cartelasPorArquivo + 1), 4, '0', STR_PAD_LEFT);
+            $contadorCartelasTerm = str_pad((($fileIndex - 1) * $cartelasPorArquivo + $grupoCartelasParaArquivo->count()), 4, '0', STR_PAD_LEFT);
+
+            $filename = "lote_{$fileIndex}_de_{$contadorCartelasIni}-{$contadorCartelasTerm}_festa_{$nomeFesta}_{$festa->id}_{$dateTime}.pdf";
+
             Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
+
+            $newFolha = new Folha();
+            $newFolha->festa_id = $festa->id;
+            $newFolha->nome_arquivo = $filename;
+            $newFolha->quantidade_por_arquivo = intval($grupoCartelasParaArquivo->count());
+            $newFolha->primeira_cartela_codigo = $contadorCartelasIni;
+            $newFolha->ultima_cartela_codigo = $contadorCartelasTerm;
+            $newFolha->pdf_path = "pdfs/{$filename}";
+            $newFolha->save();
 
             $fileIndex++;
         }
@@ -157,5 +182,5 @@ class FestaController extends Controller
             'success' => true,
             'message' => 'Os PDFs foram gerados e salvos com sucesso. Verifique o storage.'
         ]);
-    }
-}
+    }//fim funcao
+}//fim classe

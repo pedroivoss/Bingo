@@ -1,0 +1,34 @@
+.datepicker{
+    z-index: 99998 !important;
+}
+
+.swal2-container {
+    z-index: 20000 !important;
+}
+
+.blockUI {
+    z-index: 9998 !important;
+}
+
+.modal {
+    z-index: 9996 !important;
+    padding-right: 0px !important;
+}
+
+.modal-open {
+    padding-right: 0px !important;
+}
+
+.blockOverlay {
+    z-index: 9997 !important;
+}
+
+.select2-container .select2-selection--multiple .select2-selection__choice {
+    background-color: #5864c2 !important;
+    border-color: #5864c2 !important;
+    color: #fff !important;
+}
+
+.spaceMarginTop {
+    margin-top: 2ch;
+}
