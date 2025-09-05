@@ -7,12 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-
+use Milon\Barcode\Facades\DNS1DFacade;
 
 class FestaController extends Controller
 {
@@ -123,9 +118,11 @@ class FestaController extends Controller
                 }
 
                 foreach ($premios as $premio) {
+                    $barcode = DNS1DFacade::getBarcodeSVG($cartelaOriginal->codigo, 'C39');
                     $cartelasParaGerarNesteArquivo->push([
                         'numeros' => $numerosParaRenderizar,
                         'codigo' => $cartelaOriginal->codigo,
+                        'barcode' => 'data:image/svg+xml;base64,' . base64_encode($barcode),
                         'festa' => $festa,
                         'premios' => $premios,
                         'premio_atual' => $premio,
@@ -137,7 +134,7 @@ class FestaController extends Controller
             $htmlDesteArquivo = '';
 
             foreach ($lotesPaginasDesteArquivo as $lote) {
-                $htmlDesteArquivo .= view('pdf.template_teste', [
+                $htmlDesteArquivo .= view('pdf.page_multiple_cartelas_per_page', [
                     'cartelasData' => $lote,
                     'festa' => $festa,
                     'premios' => $premios,
