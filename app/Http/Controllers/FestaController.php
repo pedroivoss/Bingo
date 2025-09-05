@@ -55,6 +55,8 @@ class FestaController extends Controller
 
 public function gerarPdfLote(Request $request)
 {
+    ini_set('memory_limit', '512M');
+
     $request->validate([
         'festa_id' => 'required|exists:festas,id',
         'cartelas_por_arquivo' => 'required|integer|min:1|max:1000',
@@ -63,29 +65,24 @@ public function gerarPdfLote(Request $request)
     $festa = Festa::findOrFail($request->festa_id);
     $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
 
-    // 1. Busca todos os prêmios da festa, uma única vez.
     $premios = $festa->premios()->get();
-
-    // 2. Busca todas as cartelas da festa.
     $cartelas = $festa->cartelas()->get();
 
     $cartelasParaGerar = collect();
 
-    // 3. Itera sobre cada cartela e cria uma nova entrada para cada prêmio.
     foreach ($cartelas as $cartela) {
         foreach ($premios as $premio) {
             $cartelasParaGerar->push([
                 'numeros' => $cartela->numeros,
                 'codigo' => $cartela->codigo,
                 'festa' => $festa,
-                'premios' => $premios, // Repetindo todos os prêmios para cada cartela.
-                'premio_atual' => $premio, // Prêmio atual para destaque.
+                'premios' => $premios,
+                'premio_atual' => $premio,
             ]);
         }
     }
 
-    // 4. Divide a coleção em lotes (páginas) com base em $cartelasPorArquivo.
-     $lotesPaginas = $cartelasParaGerar->chunk($cartelasPorArquivo);
+    $lotesPaginas = $cartelasParaGerar->chunk($cartelasPorArquivo);
 
     $html = '';
     foreach ($lotesPaginas as $lote) {
@@ -94,9 +91,6 @@ public function gerarPdfLote(Request $request)
             'festa' => $festa,
             'premios' => $premios,
         ])->render();
-
-        // Adiciona uma quebra de página para começar uma nova folha
-        $html .= '<div style="page-break-after: always;"></div>';
     }
 
     $pdf = Pdf::loadHtml($html);

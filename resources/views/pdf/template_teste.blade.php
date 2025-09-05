@@ -30,7 +30,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            opacity: 0.1;
+            opacity: 0.1; /* A opacidade que você pediu */
             z-index: -1;
             width: 200px;
         }
@@ -48,7 +48,7 @@
         .cartelas-table td {
             width: 33.333%;
             vertical-align: top;
-            padding: 10px; /* Aumentei o espaçamento para criar espaço lateral e vertical */
+            padding: 10px;
             box-sizing: border-box;
         }
 
@@ -57,7 +57,7 @@
             text-align: center;
             page-break-inside: avoid;
             padding: 0;
-            margin: 0; /* Removido o margin-bottom para evitar conflito de espaçamento */
+            margin: 0;
         }
 
         .prize-info {
@@ -115,6 +115,10 @@
 
 <div class="header-container">
     <img src="{{ public_path('storage/' . $festa->cabecalho_path) }}" alt="Cabeçalho da Festa">
+</div>
+
+<div class="watermark">
+    <img src="{{ public_path('storage/uploads/Wp8NJtTtOtoxWWjWcbmzTkkN8YorKW5LT9I6kkQm.png') }}" alt="Marca D'água">
 </div>
 
 <table class="cartelas-table">
