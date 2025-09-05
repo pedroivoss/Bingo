@@ -133,11 +133,15 @@
                     <td>
                         <div class="bingo-card">
                             <div class="prize-info">
-                                {{ $data['premios'][$count]['titulo'] ?? 'Prêmio' }}<br>
-                                {{ $data['premios'][$count]['premio'] ?? 'N/A' }}
                                 @php
+                                    $ordem = $data['premios'][$count]['ordem'] ?? 'N/A';
+                                    $ordem = "{$ordem}º - Prêmio";
+
+                                    $premio = $data['premios'][$count]['titulo'] ?? 'N/A';
                                     $count++;
                                 @endphp
+                                {{ $ordem }}<br>
+                                {{ $premio}}
                             </div>
                             <table class="bingo-table">
                                 <thead>
