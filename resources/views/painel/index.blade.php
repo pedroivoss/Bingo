@@ -164,14 +164,13 @@
                     .then(data => {
                         if (data.success) {
                             alert(data.message);
-                            location.reload();
                         } else {
-                            alert('Erro ao gerar PDF.');
+                            alert('1-Erro ao gerar PDF.');
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Erro ao gerar PDF.');
+                        alert('2-Erro ao gerar PDF.', error);
                     });
                 });
             });

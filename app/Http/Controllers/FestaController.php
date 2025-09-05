@@ -53,48 +53,61 @@ class FestaController extends Controller
         abort(404, 'Arquivo PDF não encontrado ou acesso negado.');
     }
 
-    public function gerarPdfLote(Request $request)
-    {
-        $request->validate([
-            'festa_id' => 'required|exists:festas,id',
-            'cartelas_por_arquivo' => 'required|integer|min:1|max:1000',
-        ]);
+public function gerarPdfLote(Request $request)
+{
+    $request->validate([
+        'festa_id' => 'required|exists:festas,id',
+        'cartelas_por_arquivo' => 'required|integer|min:1|max:1000',
+    ]);
 
-        $festa = Festa::findOrFail($request->festa_id);
-        $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
+    $festa = Festa::findOrFail($request->festa_id);
+    $cartelasPorArquivo = (int) $request->cartelas_por_arquivo;
 
-        // **Ajuste:** Buscando as cartelas da festa para simular o Job.
-        $cartelas = $festa->cartelas()->get();
-        $loteCartelas = $cartelas->chunk($cartelasPorArquivo);
+    // 1. Busca todos os prêmios da festa, uma única vez.
+    $premios = $festa->premios()->get();
 
-        // **Ajuste:** Inicia a variável de HTML vazia.
-        $html = '';
+    // 2. Busca todas as cartelas da festa.
+    $cartelas = $festa->cartelas()->get();
 
-        // **Ajuste:** Loop para processar os lotes de cartelas.
-        foreach ($loteCartelas as $lote) {
-            $cartelasData = $lote->map(function ($cartela) use ($festa) {
-                return [
-                    'numeros' => $cartela->numeros,
-                    'codigo' => $cartela->codigo,
-                    'festa' => $festa,
-                    'premios' => $festa->premios()->get(),
-                ];
-            });
+    $cartelasParaGerar = collect();
 
-            // **Ajuste:** Renderiza o template uma única vez com os dados corretos.
-            // A quebra de página (page-break) já está no CSS do template_teste.blade.php.
-            $html .= view('pdf.template_teste', compact('cartelasData', 'festa'))->render();
+    // 3. Itera sobre cada cartela e cria uma nova entrada para cada prêmio.
+    foreach ($cartelas as $cartela) {
+        foreach ($premios as $premio) {
+            $cartelasParaGerar->push([
+                'numeros' => $cartela->numeros,
+                'codigo' => $cartela->codigo,
+                'festa' => $festa,
+                'premios' => $premios, // Repetindo todos os prêmios para cada cartela.
+                'premio_atual' => $premio, // Prêmio atual para destaque.
+            ]);
         }
-
-        $pdf = Pdf::loadHtml($html);
-        $dateTime = now()->format('Ymd_His');
-        $pdf->setPaper('a4', 'portrait');
-        $filename = "lote-1-festa-{$festa->id}-{$dateTime}.pdf";
-        Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'O PDF foi gerado e salvo com sucesso. Verifique o storage.'
-        ]);
     }
+
+    // 4. Divide a coleção em lotes (páginas) com base em $cartelasPorArquivo.
+     $lotesPaginas = $cartelasParaGerar->chunk($cartelasPorArquivo);
+
+    $html = '';
+    foreach ($lotesPaginas as $lote) {
+        $html .= view('pdf.template_teste', [
+            'cartelasData' => $lote,
+            'festa' => $festa,
+            'premios' => $premios,
+        ])->render();
+
+        // Adiciona uma quebra de página para começar uma nova folha
+        $html .= '<div style="page-break-after: always;"></div>';
+    }
+
+    $pdf = Pdf::loadHtml($html);
+    $pdf->setPaper('a4', 'portrait');
+    $dateTime = now()->format('Ymd_His');
+    $filename = "lote-festa-{$festa->id}-{$dateTime}.pdf";
+    Storage::disk('public')->put("pdfs/{$filename}", $pdf->output());
+
+    return response()->json([
+        'success' => true,
+        'message' => 'O PDF foi gerado e salvo com sucesso. Verifique o storage.'
+    ]);
+}
 }
