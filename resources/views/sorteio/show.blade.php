@@ -87,6 +87,9 @@
             </div>
         </div>
     </div>
+    {{-- Script para animação de confetti --}}
+    <script src="{{ asset('assets/js/plugins/confetti.browser.min.js') }}"></script>
+
 @endsection
 
 @push('scripts')
@@ -180,13 +183,16 @@
             for (const letra in agrupados) {
                 if (agrupados[letra].length > 0) {
                     const grupoDiv = document.createElement('div');
-                    grupoDiv.classList.add('bingo-group-column', 'p-3', 'mx-2'); // Nova classe para o grupo
+                    grupoDiv.classList.add('bingo-group-column', 'p-2', 'mx-2');
                     grupoDiv.innerHTML = `
-                        <h6 class="bingo-letter-header mb-2">${letra}</h6> <div class="list-group bingo-numbers-list"> ${agrupados[letra].sort((a, b) => a - b).map(numero => `
-                                <div class="list-group-item d-flex justify-content-between align-items-center bingo-number-item p-2 my-1">
+                        <h6 class="bingo-letter-header mb-2">${letra}</h6>
+                        <div class="bingo-numbers-list two-column-list"> {{-- **ADICIONADO: two-column-list** --}}
+                            ${agrupados[letra].sort((a, b) => a - b).map(numero => `
+                                <div class="list-group-item d-flex justify-content-between align-items-center bingo-number-item p-1 my-1">
                                     <span class="bingo-number-text">${numero}</span>
-                                    <button class="btn btn-sm p-0 ms-2 remove-individual bingo-remove-btn" data-numero="${numero}">
-                                        <i class="fas fa-times-circle"></i> </button>
+                                    <button class="btn btn-sm p-0 ms-1 remove-individual bingo-remove-btn" data-numero="${numero}">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
                                 </div>
                             `).join('')}
                         </div>
@@ -398,8 +404,18 @@
                     bingoTable.appendChild(tr);
                 });
 
-                document.getElementById('modal-status-ganhador').textContent = result.is_winner ? `Status: GANHOU! Cartela Cheia!` : `Status: Faltam ${24 - result.acertos} números para cartela cheia.`;
-                document.getElementById('integridade-warning').style.display = result.is_integrity_ok ? 'none' : 'block';
+                document.getElementById('modal-status-ganhador').innerHTML = result.is_winner ?
+                `<h4 class="text-success"><i class="fas fa-trophy me-2"></i>Status: GANHOU! Cartela Cheia!</h4>` : // Ícone de troféu
+                `<h4 class="text-danger"><i class="fas fa-sad-tear me-2"></i>Status: Faltam ${24 - result.acertos} números para cartela cheia.</h4>`; // Ícone de cara triste
+
+                if (result.is_winner) {
+                    // Dispara os fogos de artifício
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
 
                 modalValidar.show();
             } else {
@@ -583,6 +599,87 @@
         }
         #bola-gigante {
             font-size: 3rem !important;
+        }
+    }
+
+   /* Novo estilo para lista de números em duas colunas */
+    .two-column-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start; /* Alinha os itens à esquerda para ter mais controle */
+        align-items: flex-start; /* Garante que os itens iniciem no topo */
+        width: 100%;
+        gap: 5px; /* Espaçamento menor entre os itens, para acomodar 2 colunas */
+        padding: 5px 0; /* Pequeno padding para as bordas internas */
+    }
+
+    /* Estilo para cada item de número sorteado em duas colunas */
+    .two-column-list .bingo-number-item {
+        width: calc(50% - 2.5px); /* Duas colunas com um pequeno gap */
+        margin-bottom: 0; /* O gap já controla o espaçamento vertical */
+        flex-shrink: 0;
+        /* Adicionei para centralizar melhor o conteúdo dentro do item */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative; /* Necessário para posicionar o botão X */
+    }
+
+    /* Estilo do botão de remover individual */
+    .bingo-remove-btn {
+        color: #dc3545;
+        background: none;
+        border: none;
+        font-size: 0.9rem; /* Tamanho do ícone menor para ficar mais discreto */
+        padding: 0;
+        line-height: 1;
+        opacity: 0.7;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        position: absolute; /* Posicionamento absoluto para o "X" */
+        top: -5px; /* Ajuste a posição vertical */
+        right: -5px; /* Ajuste a posição horizontal */
+        z-index: 2; /* Garante que o botão X esteja acima do número */
+        background-color: white; /* Fundo branco para o círculo do X */
+        border-radius: 50%; /* Faz o fundo ser um círculo */
+        height: 18px; /* Tamanho do círculo */
+        width: 18px; /* Tamanho do círculo */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Sombra suave para o botão */
+    }
+
+    .bingo-remove-btn:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        color: #c82333;
+    }
+
+    /* Ocultar texto do botão, se houver */
+    .bingo-remove-btn span {
+        display: none;
+    }
+
+    /* === CONFETTI Z-INDEX CORREÇÃO === */
+    /* Garante que o canvas de confetti esteja acima de tudo, incluindo modais. */
+    canvas {
+        z-index: 99999 !important; /* Valor muito alto para sobrepor modais */
+        pointer-events: none; /* Não interfere com cliques no modal */
+        position: fixed; /* Fixa na tela */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+
+    /* ... (seus estilos existentes para .bingo-number-item, .bingo-remove-btn, e estilos do modal) ... */
+
+    /* Media Queries para Telas Menores */
+    @media (max-width: 768px) {
+        /* ... (seus estilos anteriores para media query) ... */
+        .two-column-list .bingo-number-item {
+            width: 100%; /* Em telas muito pequenas, volta a ser uma coluna */
         }
     }
 </style>
