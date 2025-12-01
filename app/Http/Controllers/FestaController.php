@@ -58,7 +58,7 @@ class FestaController extends Controller
     public function gerarPdfLote(Request $request)
     {
         // Aumenta o limite de memória para a execução desta função
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '1024M');
 
         $request->validate([
             'festa_id' => 'required|exists:festas,id',
